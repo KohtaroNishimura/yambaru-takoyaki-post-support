@@ -391,3 +391,30 @@ npm run dev
 ```json
 {}
 ```
+
+---
+
+# 公開（いちばん簡単）
+
+このリポジトリは `render.yaml` を追加済みなので、Render Blueprintで2サービス（Frontend / Backend）をまとめて作れます。
+
+## 手順
+
+1. GitHubにpush
+2. Renderダッシュボードで `New` → `Blueprint`
+3. このリポジトリを選択
+4. `OPENAI_API_KEY` を入力（未設定でもローカルテンプレート生成で動作）
+5. `Apply`
+
+作成されるサービス:
+- `yambaru-takoyaki-api`（FastAPI）
+- `yambaru-takoyaki-frontend`（Next.js）
+
+## 初回だけ確認
+
+- `render.yaml` 内の `NEXT_PUBLIC_API_BASE` はAPIの実URLに合わせる
+- 必要ならフロントサービスの環境変数から更新して再デプロイ
+
+## 補足
+
+- GitHub Pagesは静的配信向けのため、今回のようなFastAPIバックエンド付き構成だとRenderの方が簡単です。
