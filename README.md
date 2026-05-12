@@ -414,6 +414,7 @@ npm run dev
 
 - `render.yaml` 内の `NEXT_PUBLIC_API_BASE` はAPIの実URLに合わせる
 - 必要ならフロントサービスの環境変数から更新して再デプロイ
+- APIのデプロイ失敗時は `PYTHON_VERSION` を `3.12.9` にして再デプロイ（本リポジトリは設定済み）
 
 ## 補足
 
