@@ -40,6 +40,7 @@ class TodayInfo(BaseModel):
     old_calendar: str
     rokuyo: str
     sekki24: str
+    okinawa_event: str
     tide: str
     local_tip: str
     location: str
@@ -120,6 +121,23 @@ OKINAWA_TIPS = [
     "沖縄では差し入れ文化が身近で、温かい一品が会話のきっかけになります。",
 ]
 
+OKINAWA_EVENTS = [
+    ((1, 1), "元日", "新年のはじまり。あたたかいものを囲んでゆるりと過ごす日。"),
+    ((1, 2), "初売り", "買い物客が多い時期。食べ歩きのおやつ需要が高まりやすい日。"),
+    ((1, 17), "ジュリ馬", "名護の伝統行事。地域のにぎわいが高まる節目の日。"),
+    ((2, 3), "節分", "季節の変わり目。福を呼び込む願いを込める日。"),
+    ((3, 3), "浜下り", "海辺で無病息災を願う沖縄の行事。春の海風を感じる頃。"),
+    ((4, 3), "清明祭（シーミー）", "先祖を敬い家族で集う沖縄の大切な時期。"),
+    ((5, 4), "ユッカヌヒー（ハーリー）", "海の安全と豊漁を願う、港がにぎわう伝統行事。"),
+    ((7, 13), "旧盆（ウンケー）", "ご先祖を迎える日。家族で過ごす時間を大切にする頃。"),
+    ((7, 14), "旧盆（ナカビ）", "旧盆の中日。親族の行き来が増える時期。"),
+    ((7, 15), "旧盆（ウークイ）", "ご先祖を見送る日。夜のにぎわいが生まれやすい頃。"),
+    ((8, 10), "十五夜", "月を眺めて実りに感謝する頃。"),
+    ((9, 7), "重陽の節句（菊酒）", "長寿や健康を願う節目の日。"),
+    ((12, 8), "事始め", "年末年始の準備を始める頃。"),
+    ((12, 24), "ムーチー", "家族の健康を願って鬼餅を作る、沖縄の冬の行事。"),
+]
+
 
 def format_old_calendar_info(dt: datetime) -> tuple[str, str]:
     lunar = cnlunar.Lunar(dt.replace(tzinfo=None))
@@ -174,6 +192,15 @@ def pick_okinawa_tip(dt: datetime) -> str:
     return OKINAWA_TIPS[(dt.toordinal() + dt.month) % len(OKINAWA_TIPS)]
 
 
+def pick_okinawa_event(dt: datetime) -> str:
+    lunar = cnlunar.Lunar(dt.replace(tzinfo=None))
+    key = (lunar.lunarMonth, lunar.lunarDay)
+    for event_key, name, detail in OKINAWA_EVENTS:
+        if event_key == key:
+            return f"{name}。{detail}"
+    return "旧暦の流れに合わせて、季節の行事を感じる頃。"
+
+
 async def get_today_info() -> TodayInfo:
     now = datetime.now(JST)
     weekday = WEEKDAYS_JA[now.weekday()]
@@ -211,6 +238,7 @@ async def get_today_info() -> TodayInfo:
         old_calendar=old_calendar,
         rokuyo=calc_rokuyo(now),
         sekki24=sekki24,
+        okinawa_event=pick_okinawa_event(now),
         tide=calc_tide_from_moon_age(now),
         local_tip=pick_okinawa_tip(now),
         location="JAファーマーズ前",
@@ -221,11 +249,13 @@ async def get_today_info() -> TodayInfo:
 def build_local_post(info: TodayInfo) -> str:
     style_line = "今日もあちこーこーのたこ焼き、気持ち込めて焼きます🐙🔥"
     tip_line = info.local_tip.rstrip("。") + "よ。"
+    season_line = f"旧暦は{info.old_calendar}、{info.sekki24}。{info.okinawa_event}"
 
     return (
         "おはようございます☀️\n\n"
         f"今日は{info.weather}のやんばるです。"
         f"最高気温は{info.temperature_c:.0f}℃くらい。\n"
+        f"{season_line}\n"
         f"{info.location}で、{style_line}\n\n"
         "【営業時間】\n"
         f"{info.business_hours}\n"
@@ -265,6 +295,7 @@ def build_prompt(info: TodayInfo) -> str:
 - 旧暦: {info.old_calendar}
 - 六曜: {info.rokuyo}
 - 二十四節気: {info.sekki24}
+- 沖縄行事: {info.okinawa_event}
 - 潮汐: {info.tide}
 - 沖縄小ネタ: {info.local_tip}
 - 出店場所: {info.location}

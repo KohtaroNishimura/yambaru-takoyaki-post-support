@@ -12,6 +12,7 @@ type TodayInfo = {
   old_calendar: string;
   rokuyo: string;
   sekki24: string;
+  okinawa_event: string;
   tide: string;
   local_tip: string;
   location: string;
@@ -116,6 +117,7 @@ export default function Page() {
               <dt>旧暦</dt><dd>{info.old_calendar}</dd>
               <dt>六曜</dt><dd>{info.rokuyo}</dd>
               <dt>二十四節気</dt><dd>{info.sekki24}</dd>
+              <dt>沖縄行事</dt><dd>{info.okinawa_event}</dd>
               <dt>潮汐</dt><dd>{info.tide}</dd>
               <dt>沖縄小ネタ</dt><dd>{info.local_tip}</dd>
               <dt>出店場所</dt><dd>{info.location}</dd>
