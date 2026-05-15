@@ -1,5 +1,8 @@
 import os
+import json
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import cnlunar
@@ -42,7 +45,6 @@ class TodayInfo(BaseModel):
     sekki24: str
     okinawa_event: str
     tide: str
-    local_tip: str
     location: str
     business_hours: str
 
@@ -113,14 +115,6 @@ SEKKI_JA_MAP = {
 }
 
 
-OKINAWA_TIPS = [
-    "沖縄では挨拶の「ゆたしく」が、ぐっと距離を近くしてくれます。",
-    "沖縄の小麦粉文化は根強く、たこ焼きやお好み焼きはおやつの定番です。",
-    "買い物帰りにシェアして食べる“ちょい買い”は、やんばるでも相性抜群です。",
-    "名護の夕方は海風で体感が変わりやすいので、あつあつが喜ばれやすいです。",
-    "沖縄では差し入れ文化が身近で、温かい一品が会話のきっかけになります。",
-]
-
 OKINAWA_EVENTS = [
     ((1, 1), "元日", "新年のはじまり。あたたかいものを囲んでゆるりと過ごす日。"),
     ((1, 2), "初売り", "買い物客が多い時期。食べ歩きのおやつ需要が高まりやすい日。"),
@@ -138,17 +132,29 @@ OKINAWA_EVENTS = [
     ((12, 24), "ムーチー", "家族の健康を願って鬼餅を作る、沖縄の冬の行事。"),
 ]
 
+EVENTS_MASTER_PATH = Path(__file__).resolve().parents[2] / "data" / "okinawa_events_master.json"
+
+
+def load_events_master() -> dict[str, Any]:
+    try:
+        with EVENTS_MASTER_PATH.open("r", encoding="utf-8") as f:
+            loaded = json.load(f)
+            if isinstance(loaded, dict):
+                return loaded
+    except Exception:
+        pass
+    return {}
+
 
 def format_old_calendar_info(dt: datetime) -> tuple[str, str]:
     lunar = cnlunar.Lunar(dt.replace(tzinfo=None))
     leap = "閏" if lunar.isLunarLeapMonth else ""
     old_calendar = f"{leap}{lunar.lunarMonthCn}{lunar.lunarDayCn}"
     if lunar.todaySolarTerms != "无":
-        sekki = f"{SEKKI_JA_MAP.get(lunar.todaySolarTerms, lunar.todaySolarTerms)}（当日）"
+        sekki = SEKKI_JA_MAP.get(lunar.todaySolarTerms, lunar.todaySolarTerms)
     else:
         term = SEKKI_JA_MAP.get(lunar.nextSolarTerm, lunar.nextSolarTerm)
-        month, day = lunar.nextSolarTermDate
-        sekki = f"{term}（次回 {month}/{day}）"
+        sekki = term
     return old_calendar, sekki
 
 
@@ -188,17 +194,32 @@ def calc_tide_from_moon_age(dt: datetime) -> str:
     return "中潮"
 
 
-def pick_okinawa_tip(dt: datetime) -> str:
-    return OKINAWA_TIPS[(dt.toordinal() + dt.month) % len(OKINAWA_TIPS)]
-
-
 def pick_okinawa_event(dt: datetime) -> str:
+    master = load_events_master()
     lunar = cnlunar.Lunar(dt.replace(tzinfo=None))
+    lunar_key = (lunar.lunarMonth, lunar.lunarDay)
+
+    for event in master.get("lunar_events", []):
+        month = int(event.get("lunar_month", -1))
+        day = int(event.get("lunar_day", -1))
+        if (month, day) == lunar_key:
+            name = str(event.get("name", ""))
+            detail = str(event.get("description", ""))
+            if name and detail:
+                return f"{name}。{detail}"
+
+    for event in master.get("seasonal_events", []):
+        if str(event.get("solar_term", "")) == SEKKI_JA_MAP.get(lunar.todaySolarTerms, lunar.todaySolarTerms):
+            name = str(event.get("name", ""))
+            detail = str(event.get("description", ""))
+            if name and detail:
+                return f"{name}。{detail}"
+
     key = (lunar.lunarMonth, lunar.lunarDay)
     for event_key, name, detail in OKINAWA_EVENTS:
         if event_key == key:
             return f"{name}。{detail}"
-    return "旧暦の流れに合わせて、季節の行事を感じる頃。"
+    return "該当する沖縄行事はありません。"
 
 
 async def get_today_info() -> TodayInfo:
@@ -240,29 +261,26 @@ async def get_today_info() -> TodayInfo:
         sekki24=sekki24,
         okinawa_event=pick_okinawa_event(now),
         tide=calc_tide_from_moon_age(now),
-        local_tip=pick_okinawa_tip(now),
         location="JAファーマーズ前",
         business_hours="12:00〜17:30",
     )
 
 
 def build_local_post(info: TodayInfo) -> str:
-    style_line = "今日もあちこーこーのたこ焼き、気持ち込めて焼きます🐙🔥"
-    tip_line = info.local_tip.rstrip("。") + "よ。"
-    season_line = f"旧暦は{info.old_calendar}、{info.sekki24}。{info.okinawa_event}"
+    day_tag = info.okinawa_event.split("。")[0]
+    season_line = f"今日は #{day_tag} ですね。"
 
     return (
-        "おはようございます☀️\n\n"
-        f"今日は{info.weather}のやんばるです。"
-        f"最高気温は{info.temperature_c:.0f}℃くらい。\n"
+        "おはようございます☀️\n"
         f"{season_line}\n"
-        f"{info.location}で、{style_line}\n\n"
+        f"旧暦は{info.old_calendar}、{info.sekki24}の頃。\n"
+        f"{info.okinawa_event}\n"
+        f"やんばるは{info.weather}、最高気温{info.temperature_c:.0f}℃予報です。\n"
+        f"{info.location}で、あちこーこーのたこ焼きを焼いてお待ちしています🐙🔥\n\n"
         "【営業時間】\n"
         f"{info.business_hours}\n"
-        "※売り切れ次第終了の場合あり\n\n"
-        "買い物ついでや、おやつ時間にもぜひ🙌\n"
-        f"{tip_line}\n"
-        "本日もゆたしくうにげーさびら！\n\n"
+        "（売り切れ次第終了の場合があります）\n\n"
+        "御来店お待ちしております。\n\n"
         "#やんばる #たこ焼き #あちこーこー #沖縄 #名護"
     )
 
@@ -281,8 +299,9 @@ def build_prompt(info: TodayInfo) -> str:
 - 220文字前後
 - 営業情報は必ず入れる
 - 沖縄らしいやわらかい言い回しを入れる
-- 沖縄小ネタは「豆知識ラベル」を使わず、本文中の自然な一文として溶け込ませる
 - ハッシュタグは最後に3〜5個
+- 2行目付近で「今日は #沖縄行事名」「旧暦」「二十四節気」を自然に入れる
+- 「【営業時間】」の見出しを入れる
 
 投稿スタイル:
 {STYLE_HINT}
@@ -297,7 +316,6 @@ def build_prompt(info: TodayInfo) -> str:
 - 二十四節気: {info.sekki24}
 - 沖縄行事: {info.okinawa_event}
 - 潮汐: {info.tide}
-- 沖縄小ネタ: {info.local_tip}
 - 出店場所: {info.location}
 - 営業時間: {info.business_hours}
 """.strip()

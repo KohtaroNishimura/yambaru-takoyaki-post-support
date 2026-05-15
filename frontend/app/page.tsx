@@ -14,7 +14,6 @@ type TodayInfo = {
   sekki24: string;
   okinawa_event: string;
   tide: string;
-  local_tip: string;
   location: string;
   business_hours: string;
 };
@@ -119,7 +118,6 @@ export default function Page() {
               <dt>二十四節気</dt><dd>{info.sekki24}</dd>
               <dt>沖縄行事</dt><dd>{info.okinawa_event}</dd>
               <dt>潮汐</dt><dd>{info.tide}</dd>
-              <dt>沖縄小ネタ</dt><dd>{info.local_tip}</dd>
               <dt>出店場所</dt><dd>{info.location}</dd>
               <dt>営業時間</dt><dd>{info.business_hours}</dd>
             </dl>
