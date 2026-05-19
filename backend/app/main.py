@@ -302,14 +302,13 @@ def build_seasonal_produce(dt: datetime) -> list[ProduceItem]:
     ]
 
 
-def build_post_strategy(events: list[EventItem], produce: list[ProduceItem], info_date: str, location: str) -> PostStrategy:
-    primary = events[0].name if events else "記念日"
+def build_post_strategy(events: list[EventItem], produce: list[ProduceItem], location: str) -> PostStrategy:
     produce_text = produce[0].name if produce else "旬の島野菜"
     suggested = (
-        f"本日は#{primary}。{location}であちこーこーのたこ焼きをご用意します。"
+        f"{location}であちこーこーのたこ焼きをご用意します。"
         f"{produce_text}の季節感も一緒に楽しめる一日に。"
-        f"（{info_date}）"
     )
+    primary = events[0].name if events else "記念日"
     return PostStrategy(primary_hashtag=f"#{primary}", suggested_copy=suggested)
 
 
@@ -433,7 +432,6 @@ async def get_today_info() -> TodayInfo:
     post_strategy = build_post_strategy(
         events=events,
         produce=seasonal_produce,
-        info_date=now.strftime("%Y-%m-%d"),
         location="JAファーマーズ前",
     )
 
