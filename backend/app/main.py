@@ -9,7 +9,7 @@ import cnlunar
 import httpx
 from dotenv import load_dotenv
 from astral import moon
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -408,19 +408,24 @@ async def get_today_info() -> TodayInfo:
         "&timezone=Asia%2FTokyo&forecast_days=1"
     )
 
+    weather_code = 0
+    temp_max = 28.0
+    sunrise = "06:00"
+    sunset = "18:00"
+
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             res = await client.get(weather_url)
             res.raise_for_status()
             data = res.json()
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"天気情報の取得に失敗: {exc}")
-
-    daily = data.get("daily", {})
-    weather_code = int(daily.get("weather_code", [0])[0])
-    temp_max = float(daily.get("temperature_2m_max", [28.0])[0])
-    sunrise = str(daily.get("sunrise", [""])[0])[-5:]
-    sunset = str(daily.get("sunset", [""])[0])[-5:]
+        daily = data.get("daily", {})
+        weather_code = int(daily.get("weather_code", [0])[0])
+        temp_max = float(daily.get("temperature_2m_max", [28.0])[0])
+        sunrise = str(daily.get("sunrise", [""])[0])[-5:]
+        sunset = str(daily.get("sunset", [""])[0])[-5:]
+    except Exception:
+        # External weather API may be rate-limited; keep app available with sane defaults.
+        pass
 
     old_calendar, sekki24 = format_old_calendar_info(now)
     okinawa_event = pick_okinawa_event(now)
