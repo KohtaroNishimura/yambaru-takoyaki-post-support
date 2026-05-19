@@ -168,6 +168,11 @@ FIXED_EVENTS = [
     {"month": 10, "day": 17, "name": "沖縄そばの日", "category": "local_okinawa", "origin": "沖縄県", "priority": 84},
 ]
 
+# Fallback national observances used only when no Okinawa/fixed/recurring events are available.
+NATIONAL_DAY_FALLBACKS = {
+    (5, 19): {"name": "ボクシングの日", "origin": "日本プロボクシング協会"},
+}
+
 SEASONAL_PRODUCE_BY_MONTH = {
     1: [
         {"name": "タンカン", "description": "冬に旬を迎える沖縄柑橘。甘みと香りが強い。", "pairing": "食後のデザート提案"},
@@ -269,6 +274,18 @@ def build_daily_events(dt: datetime, okinawa_event: str) -> list[EventItem]:
             )
         )
 
+    if not events:
+        fallback = NATIONAL_DAY_FALLBACKS.get((dt.month, dt.day))
+        if fallback:
+            events.append(
+                EventItem(
+                    name=fallback["name"],
+                    category="national_memorial_day",
+                    origin=fallback["origin"],
+                    priority_score=60,
+                )
+            )
+
     events.sort(key=lambda e: e.priority_score, reverse=True)
     return events[:3]
 
@@ -286,7 +303,7 @@ def build_seasonal_produce(dt: datetime) -> list[ProduceItem]:
 
 
 def build_post_strategy(events: list[EventItem], produce: list[ProduceItem], info_date: str, location: str) -> PostStrategy:
-    primary = events[0].name if events else "やんばるの日"
+    primary = events[0].name if events else "記念日"
     produce_text = produce[0].name if produce else "旬の島野菜"
     suggested = (
         f"本日は#{primary}。{location}であちこーこーのたこ焼きをご用意します。"
@@ -444,14 +461,12 @@ def build_local_post(info: TodayInfo) -> str:
     if info.events:
         day_tag = info.events[0].name
     else:
-        day_tag = info.okinawa_event.split("。")[0]
+        day_tag = "記念日"
     season_line = f"今日は #{day_tag} ですね。"
 
     return (
         "はいさい☀️\n"
         f"{season_line}\n"
-        f"旧暦は{info.old_calendar}、{info.sekki24}の頃。\n"
-        f"{info.okinawa_event}\n"
         f"やんばるは{info.weather}、最高気温{info.temperature_c:.0f}℃予報です。\n"
         f"{info.post_strategy.suggested_copy}\n"
         f"{info.location}で、あちこーこーのたこ焼きを焼いてお待ちしています🐙🔥\n\n"
@@ -478,8 +493,10 @@ def build_prompt(info: TodayInfo) -> str:
 - 営業情報は必ず入れる
 - 沖縄らしいやわらかい言い回しを入れる
 - ハッシュタグは最後に3〜5個
-- 2行目付近で「今日は #沖縄行事名」「旧暦」「二十四節気」を自然に入れる
+- 2行目付近で「今日は #〇〇の日」を自然に入れる
+- 沖縄行事がなければ、全国の記念日（eventsの最上位）を #〇〇の日 として使う
 - 「【営業時間】」の見出しを入れる
+- 旧暦・二十四節気は内部参照のみ。本文には無理に入れない
 
 投稿スタイル:
 {STYLE_HINT}
