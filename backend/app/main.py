@@ -29,6 +29,24 @@ WEEKDAYS_JA = ["月", "火", "水", "木", "金", "土", "日"]
 STYLE_HINT = "朝営業告知。元気で親しみやすく、あちこーこー感を強める。"
 
 
+class EventItem(BaseModel):
+    name: str
+    category: str
+    origin: str
+    priority_score: int
+
+
+class ProduceItem(BaseModel):
+    name: str
+    description: str
+    pairing_with_takoyaki: str
+
+
+class PostStrategy(BaseModel):
+    primary_hashtag: str
+    suggested_copy: str
+
+
 class GenerateRequest(BaseModel):
     pass
 
@@ -47,6 +65,9 @@ class TodayInfo(BaseModel):
     tide: str
     location: str
     business_hours: str
+    events: list[EventItem]
+    seasonal_produce: list[ProduceItem]
+    post_strategy: PostStrategy
 
 
 class GenerateResponse(BaseModel):
@@ -134,6 +155,146 @@ OKINAWA_EVENTS = [
 
 EVENTS_MASTER_PATH = Path(__file__).resolve().parents[2] / "data" / "okinawa_events_master.json"
 
+FIXED_EVENTS = [
+    {"month": 3, "day": 5, "name": "サンゴの日", "category": "local_okinawa", "origin": "沖縄県", "priority": 68},
+    {"month": 3, "day": 6, "name": "島らっきょうの日", "category": "agriculture", "origin": "伊江村", "priority": 95},
+    {"month": 4, "day": 8, "name": "島やさいの日", "category": "agriculture", "origin": "JAおきなわ", "priority": 92},
+    {"month": 5, "day": 7, "name": "粉の日（コナモンの日）", "category": "takoyaki", "origin": "日本コナモン協会", "priority": 98},
+    {"month": 5, "day": 8, "name": "ゴーヤーの日", "category": "agriculture", "origin": "沖縄県", "priority": 90},
+    {"month": 7, "day": 15, "name": "マンゴーの日", "category": "agriculture", "origin": "沖縄県", "priority": 88},
+    {"month": 8, "day": 8, "name": "たこ焼の日", "category": "takoyaki", "origin": "日本記念日協会", "priority": 100},
+    {"month": 9, "day": 22, "name": "シークヮーサーの日", "category": "agriculture", "origin": "沖縄県", "priority": 93},
+    {"month": 10, "day": 16, "name": "国消国産の日", "category": "ja_agri", "origin": "JA全中", "priority": 96},
+    {"month": 10, "day": 17, "name": "沖縄そばの日", "category": "local_okinawa", "origin": "沖縄県", "priority": 84},
+]
+
+SEASONAL_PRODUCE_BY_MONTH = {
+    1: [
+        {"name": "タンカン", "description": "冬に旬を迎える沖縄柑橘。甘みと香りが強い。", "pairing": "食後のデザート提案"},
+        {"name": "島にんじん", "description": "甘みがあり火を入れると風味が立つ冬野菜。", "pairing": "細切りを軽く炒めてトッピング"},
+    ],
+    2: [
+        {"name": "島にんじん", "description": "冬の終わりまで楽しめる島野菜。", "pairing": "刻んで生地に混ぜて香り付け"},
+        {"name": "葉ニンニク", "description": "辛みが穏やかで香りの良い沖縄の冬野菜。", "pairing": "ガーリック風味だれに活用"},
+    ],
+    3: [
+        {"name": "島らっきょう", "description": "香りが良くシャキッとした食感が特徴。", "pairing": "ネギ代わりに刻みトッピング"},
+        {"name": "パッションフルーツ", "description": "春から初夏に出回る芳醇なトロピカル果実。", "pairing": "食後ドリンク提案"},
+    ],
+    4: [
+        {"name": "シブイ（冬瓜）", "description": "水分が多くさっぱりした味わい。", "pairing": "和風だしだれとの相性を訴求"},
+        {"name": "島やさい各種", "description": "ハンダマやンジャナなど個性豊かな葉野菜。", "pairing": "日替わりトッピング企画"},
+    ],
+    5: [
+        {"name": "ゴーヤー", "description": "苦味が特徴の沖縄を代表する夏野菜。", "pairing": "薄切りを副菜提案"},
+        {"name": "アセローラ", "description": "ビタミンCが豊富な沖縄果実。", "pairing": "食後ドリンク提案"},
+    ],
+    6: [
+        {"name": "マンゴー", "description": "夏の主役果実。濃厚な甘みが魅力。", "pairing": "食後デザート提案"},
+        {"name": "パイナップル", "description": "酸味と甘みのバランスが良い旬果実。", "pairing": "シークヮーサー塩とのセット提案"},
+    ],
+    7: [
+        {"name": "マンゴー", "description": "最盛期を迎える沖縄果実。", "pairing": "食後デザート提案"},
+        {"name": "オクラ", "description": "夏に旬を迎える粘りのある野菜。", "pairing": "刻みオクラを和風たれに"},
+    ],
+    8: [
+        {"name": "パイナップル", "description": "沖縄北部で親しまれる夏果実。", "pairing": "冷たいドリンク提案"},
+        {"name": "パパイヤ", "description": "青果・完熟ともに使える沖縄食材。", "pairing": "副菜の提案"},
+    ],
+    9: [
+        {"name": "シークヮーサー", "description": "青切りの爽やかな酸味が特徴。", "pairing": "ポン酢だれの香り付け"},
+        {"name": "島かぼちゃ", "description": "甘みがあり煮崩れしにくい。", "pairing": "季節限定トッピング"},
+    ],
+    10: [
+        {"name": "カーブチー", "description": "やんばるで親しまれる在来柑橘。", "pairing": "柑橘塩だれ提案"},
+        {"name": "紅いも", "description": "秋に向けて存在感が増す沖縄素材。", "pairing": "甘じょっぱ系の限定商品提案"},
+    ],
+    11: [
+        {"name": "紅いも", "description": "秋から冬に甘みが増す沖縄食材。", "pairing": "限定メニュー告知"},
+        {"name": "スターフルーツ", "description": "冬に向けて出回るトロピカル果実。", "pairing": "食後デザート提案"},
+    ],
+    12: [
+        {"name": "島にんじん", "description": "冬の食卓を彩る沖縄野菜。", "pairing": "細切りトッピング提案"},
+        {"name": "ローゼル", "description": "鮮やかな赤色のハーブ。", "pairing": "温冷ドリンク提案"},
+    ],
+}
+
+
+def is_nth_weekday(dt: datetime, weekday: int, nth: int) -> bool:
+    if dt.weekday() != weekday:
+        return False
+    return ((dt.day - 1) // 7) + 1 == nth
+
+
+def build_daily_events(dt: datetime, okinawa_event: str) -> list[EventItem]:
+    events: list[EventItem] = []
+
+    if okinawa_event != "該当する沖縄行事はありません。":
+        events.append(
+            EventItem(
+                name=okinawa_event.split("。")[0],
+                category="local_okinawa",
+                origin="沖縄県",
+                priority_score=94,
+            )
+        )
+
+    for event in FIXED_EVENTS:
+        if dt.month == event["month"] and dt.day == event["day"]:
+            events.append(
+                EventItem(
+                    name=event["name"],
+                    category=event["category"],
+                    origin=event["origin"],
+                    priority_score=int(event["priority"]),
+                )
+            )
+
+    # Monthly recurring synergy day: 3rd Saturday
+    if is_nth_weekday(dt, weekday=5, nth=3):
+        events.append(
+            EventItem(
+                name="オコパー・タコパーの日",
+                category="takoyaki",
+                origin="日清製粉グループ",
+                priority_score=100,
+            )
+        )
+        events.append(
+            EventItem(
+                name="おきなわ食材の日",
+                category="ja_agri",
+                origin="沖縄県地産地消推進県民会議",
+                priority_score=97,
+            )
+        )
+
+    events.sort(key=lambda e: e.priority_score, reverse=True)
+    return events[:3]
+
+
+def build_seasonal_produce(dt: datetime) -> list[ProduceItem]:
+    rows = SEASONAL_PRODUCE_BY_MONTH.get(dt.month, [])
+    return [
+        ProduceItem(
+            name=row["name"],
+            description=row["description"],
+            pairing_with_takoyaki=row["pairing"],
+        )
+        for row in rows[:2]
+    ]
+
+
+def build_post_strategy(events: list[EventItem], produce: list[ProduceItem], info_date: str, location: str) -> PostStrategy:
+    primary = events[0].name if events else "やんばるの日"
+    produce_text = produce[0].name if produce else "旬の島野菜"
+    suggested = (
+        f"本日は#{primary}。{location}であちこーこーのたこ焼きをご用意します。"
+        f"{produce_text}の季節感も一緒に楽しめる一日に。"
+        f"（{info_date}）"
+    )
+    return PostStrategy(primary_hashtag=f"#{primary}", suggested_copy=suggested)
+
 
 def load_events_master() -> dict[str, Any]:
     try:
@@ -215,7 +376,8 @@ def pick_okinawa_event(dt: datetime) -> str:
             if name and detail:
                 return f"{name}。{detail}"
 
-    key = (lunar.lunarMonth, lunar.lunarDay)
+    # OKINAWA_EVENTS is defined with fixed (solar) month/day tuples.
+    key = (dt.month, dt.day)
     for event_key, name, detail in OKINAWA_EVENTS:
         if event_key == key:
             return f"{name}。{detail}"
@@ -248,6 +410,15 @@ async def get_today_info() -> TodayInfo:
     sunset = str(daily.get("sunset", [""])[0])[-5:]
 
     old_calendar, sekki24 = format_old_calendar_info(now)
+    okinawa_event = pick_okinawa_event(now)
+    events = build_daily_events(now, okinawa_event)
+    seasonal_produce = build_seasonal_produce(now)
+    post_strategy = build_post_strategy(
+        events=events,
+        produce=seasonal_produce,
+        info_date=now.strftime("%Y-%m-%d"),
+        location="JAファーマーズ前",
+    )
 
     return TodayInfo(
         date=now.strftime("%Y-%m-%d"),
@@ -259,23 +430,30 @@ async def get_today_info() -> TodayInfo:
         old_calendar=old_calendar,
         rokuyo=calc_rokuyo(now),
         sekki24=sekki24,
-        okinawa_event=pick_okinawa_event(now),
+        okinawa_event=okinawa_event,
         tide=calc_tide_from_moon_age(now),
         location="JAファーマーズ前",
         business_hours="12:00〜17:30",
+        events=events,
+        seasonal_produce=seasonal_produce,
+        post_strategy=post_strategy,
     )
 
 
 def build_local_post(info: TodayInfo) -> str:
-    day_tag = info.okinawa_event.split("。")[0]
+    if info.events:
+        day_tag = info.events[0].name
+    else:
+        day_tag = info.okinawa_event.split("。")[0]
     season_line = f"今日は #{day_tag} ですね。"
 
     return (
-        "おはようございます☀️\n"
+        "はいさい☀️\n"
         f"{season_line}\n"
         f"旧暦は{info.old_calendar}、{info.sekki24}の頃。\n"
         f"{info.okinawa_event}\n"
         f"やんばるは{info.weather}、最高気温{info.temperature_c:.0f}℃予報です。\n"
+        f"{info.post_strategy.suggested_copy}\n"
         f"{info.location}で、あちこーこーのたこ焼きを焼いてお待ちしています🐙🔥\n\n"
         "【営業時間】\n"
         f"{info.business_hours}\n"
@@ -316,6 +494,9 @@ def build_prompt(info: TodayInfo) -> str:
 - 二十四節気: {info.sekki24}
 - 沖縄行事: {info.okinawa_event}
 - 潮汐: {info.tide}
+- 今日の主要イベント: {[e.model_dump() for e in info.events]}
+- 旬の農産物: {[p.model_dump() for p in info.seasonal_produce]}
+- 投稿戦略: {info.post_strategy.model_dump()}
 - 出店場所: {info.location}
 - 営業時間: {info.business_hours}
 """.strip()
