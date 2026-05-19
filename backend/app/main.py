@@ -304,10 +304,7 @@ def build_seasonal_produce(dt: datetime) -> list[ProduceItem]:
 
 def build_post_strategy(events: list[EventItem], produce: list[ProduceItem], location: str) -> PostStrategy:
     produce_text = produce[0].name if produce else "旬の島野菜"
-    suggested = (
-        f"{location}であちこーこーのたこ焼きをご用意します。"
-        f"{produce_text}の季節感も一緒に楽しめる一日に。"
-    )
+    suggested = f"{produce_text}の季節感も一緒に楽しめる一日に。"
     primary = events[0].name if events else "記念日"
     return PostStrategy(primary_hashtag=f"#{primary}", suggested_copy=suggested)
 
