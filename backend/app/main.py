@@ -209,19 +209,30 @@ NATIONAL_DAY_FALLBACKS = {
 
 async def fetch_national_anniversaries(dt: datetime) -> list[str]:
     mmdd = f"{dt.month:02d}{dt.day:02d}"
-    url = f"https://api.whatistoday.cyou/index.cgi/v3/anniv/{mmdd}"
+    urls = [
+        f"https://api.whatistoday.cyou/index.cgi/v3/anniv/{mmdd}",
+        f"https://api.whatistoday.cyou/v3/anniv/{mmdd}",
+    ]
     try:
-        async with httpx.AsyncClient(timeout=8.0, follow_redirects=True) as client:
-            res = await client.get(url)
-            res.raise_for_status()
-            payload = res.json()
-        names: list[str] = []
-        for i in range(1, 6):
-            key = f"anniv{i}"
-            value = str(payload.get(key, "")).strip()
-            if value:
-                names.append(value)
-        return names
+        async with httpx.AsyncClient(
+            timeout=8.0,
+            follow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+        ) as client:
+            for url in urls:
+                res = await client.get(url)
+                if res.status_code != 200:
+                    continue
+                payload = res.json()
+                names: list[str] = []
+                for i in range(1, 6):
+                    key = f"anniv{i}"
+                    value = str(payload.get(key, "")).strip()
+                    if value:
+                        names.append(value)
+                if names:
+                    return names
+        return []
     except Exception:
         return []
 
@@ -494,6 +505,17 @@ async def get_today_info() -> TodayInfo:
     old_calendar, sekki24 = format_old_calendar_info(now)
     okinawa_event = pick_okinawa_event(now)
     events = await build_daily_events(now, okinawa_event)
+    if not events:
+        anniversaries = await fetch_national_anniversaries(now)
+        if anniversaries:
+            events = [
+                EventItem(
+                    name=anniversaries[0],
+                    category="national_memorial_day_api",
+                    origin="whatistoday.cyou",
+                    priority_score=58,
+                )
+            ]
     seasonal_produce = build_seasonal_produce(now)
     post_strategy = build_post_strategy(
         events=events,
