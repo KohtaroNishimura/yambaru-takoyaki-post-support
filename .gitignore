@@ -38,3 +38,6 @@ yarn-error.log*
 coverage/
 dist/
 build/
+
+# Accidental duplicate lockfiles
+*package-lock 2.json
