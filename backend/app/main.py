@@ -8,7 +8,8 @@ from zoneinfo import ZoneInfo
 import cnlunar
 import httpx
 from dotenv import load_dotenv
-from astral import moon
+from astral import Observer, moon
+from astral.sun import sun
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -21,8 +22,10 @@ except Exception:
 load_dotenv()
 
 JST = ZoneInfo("Asia/Tokyo")
+# Nago city point
 NAGO_LAT = 26.5881
 NAGO_LON = 127.9761
+JMA_OKINAWA_MAINLAND_OFFICE = "471000"
 
 WEEKDAYS_JA = ["月", "火", "水", "木", "金", "土", "日"]
 
@@ -106,6 +109,66 @@ def weather_code_to_ja(code: int) -> str:
         95: "雷雨",
     }
     return mapping.get(code, "天気情報あり")
+
+
+def normalize_jma_weather_text(text: str) -> str:
+    compact = text.replace("　", "")
+    if "晴れ" in compact and "くもり" in compact:
+        return "晴れ時々くもり"
+    if "くもり" in compact and "晴れ" not in compact:
+        return "くもり"
+    if "雨" in compact and "晴れ" in compact:
+        return "晴れ時々雨"
+    if "雨" in compact and "くもり" in compact:
+        return "くもり時々雨"
+    if "雨" in compact:
+        return "雨"
+    if "晴れ" in compact:
+        return "晴れ"
+    return text
+
+
+async def fetch_jma_nago_weather(dt: datetime) -> tuple[str, float]:
+    url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{JMA_OKINAWA_MAINLAND_OFFICE}.json"
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        res = await client.get(url)
+        res.raise_for_status()
+        payload = res.json()
+
+    report = payload[0]
+    weather_text = "天気情報あり"
+    temp = 28.0
+
+    weather_series = report.get("timeSeries", [{}])[0]
+    for area in weather_series.get("areas", []):
+        if area.get("area", {}).get("name") == "本島北部":
+            weathers = area.get("weathers", [])
+            if weathers:
+                weather_text = normalize_jma_weather_text(str(weathers[0]))
+            break
+
+    temp_series = report.get("timeSeries", [{}, {}, {}])[2]
+    defines = temp_series.get("timeDefines", [])
+    for area in temp_series.get("areas", []):
+        if area.get("area", {}).get("name") != "名護":
+            continue
+        nums: list[float] = []
+        for idx, raw in enumerate(area.get("temps", [])):
+            try:
+                d = datetime.fromisoformat(str(defines[idx]).replace("Z", "+00:00")).astimezone(JST)
+            except Exception:
+                continue
+            if d.date() != dt.date():
+                continue
+            try:
+                nums.append(float(raw))
+            except Exception:
+                continue
+        if nums:
+            temp = max(nums)
+        break
+
+    return weather_text, temp
 
 
 SEKKI_JA_MAP = {
@@ -476,30 +539,19 @@ async def get_today_info() -> TodayInfo:
     now = datetime.now(JST)
     weekday = WEEKDAYS_JA[now.weekday()]
 
-    weather_url = (
-        "https://api.open-meteo.com/v1/forecast"
-        f"?latitude={NAGO_LAT}&longitude={NAGO_LON}"
-        "&daily=weather_code,temperature_2m_max,sunrise,sunset"
-        "&timezone=Asia%2FTokyo&forecast_days=1"
-    )
-
-    weather_code = 0
-    temp_max = 28.0
+    weather_text = "天気情報あり"
+    current_temp = 28.0
     sunrise = "06:00"
     sunset = "18:00"
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            res = await client.get(weather_url)
-            res.raise_for_status()
-            data = res.json()
-        daily = data.get("daily", {})
-        weather_code = int(daily.get("weather_code", [0])[0])
-        temp_max = float(daily.get("temperature_2m_max", [28.0])[0])
-        sunrise = str(daily.get("sunrise", [""])[0])[-5:]
-        sunset = str(daily.get("sunset", [""])[0])[-5:]
+        weather_text, current_temp = await fetch_jma_nago_weather(now)
+        obs = Observer(latitude=NAGO_LAT, longitude=NAGO_LON)
+        s = sun(obs, date=now.date(), tzinfo=JST)
+        sunrise = s["sunrise"].strftime("%H:%M")
+        sunset = s["sunset"].strftime("%H:%M")
     except Exception:
-        # External weather API may be rate-limited; keep app available with sane defaults.
+        # External API or astronomical calculation may fail; keep app available with defaults.
         pass
 
     old_calendar, sekki24 = format_old_calendar_info(now)
@@ -526,8 +578,8 @@ async def get_today_info() -> TodayInfo:
     return TodayInfo(
         date=now.strftime("%Y-%m-%d"),
         weekday=weekday,
-        weather=weather_code_to_ja(weather_code),
-        temperature_c=temp_max,
+        weather=weather_text,
+        temperature_c=current_temp,
         sunrise=sunrise,
         sunset=sunset,
         old_calendar=old_calendar,
