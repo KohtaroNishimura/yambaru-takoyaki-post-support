@@ -156,22 +156,74 @@ OKINAWA_EVENTS = [
 EVENTS_MASTER_PATH = Path(__file__).resolve().parents[2] / "data" / "okinawa_events_master.json"
 
 FIXED_EVENTS = [
+    {"month": 1, "day": 1, "name": "元旦", "category": "general", "origin": "日本", "priority": 82},
+    {"month": 1, "day": 31, "name": "名護さくら祭り", "category": "local_yambaru", "origin": "名護市", "priority": 90},
+    {"month": 2, "day": 3, "name": "にんじんの日", "category": "agriculture", "origin": "沖縄県", "priority": 85},
+    {"month": 2, "day": 9, "name": "フクギの日", "category": "local_okinawa", "origin": "沖縄県", "priority": 82},
+    {"month": 2, "day": 11, "name": "かぼちゃの日（宮古島）", "category": "agriculture", "origin": "宮古島", "priority": 83},
+    {"month": 2, "day": 26, "name": "やんばる国立公園指定記念", "category": "local_yambaru", "origin": "やんばる", "priority": 90},
+    {"month": 3, "day": 1, "name": "東村つつじ祭り", "category": "local_yambaru", "origin": "東村", "priority": 87},
     {"month": 3, "day": 5, "name": "サンゴの日", "category": "local_okinawa", "origin": "沖縄県", "priority": 68},
     {"month": 3, "day": 6, "name": "島らっきょうの日", "category": "agriculture", "origin": "伊江村", "priority": 95},
+    {"month": 4, "day": 3, "name": "シーサーの日", "category": "local_okinawa", "origin": "沖縄県", "priority": 86},
+    {"month": 4, "day": 4, "name": "まーさんシシの日", "category": "agriculture", "origin": "沖縄県", "priority": 85},
     {"month": 4, "day": 8, "name": "島やさいの日", "category": "agriculture", "origin": "JAおきなわ", "priority": 92},
+    {"month": 4, "day": 10, "name": "とうがんの日", "category": "agriculture", "origin": "沖縄県", "priority": 90},
     {"month": 5, "day": 7, "name": "粉の日（コナモンの日）", "category": "takoyaki", "origin": "日本コナモン協会", "priority": 98},
     {"month": 5, "day": 8, "name": "ゴーヤーの日", "category": "agriculture", "origin": "沖縄県", "priority": 90},
+    {"month": 5, "day": 10, "name": "黒糖の日", "category": "agriculture", "origin": "沖縄県", "priority": 88},
+    {"month": 5, "day": 12, "name": "アセローラの日", "category": "local_yambaru", "origin": "本部町", "priority": 89},
+    {"month": 5, "day": 15, "name": "沖縄本土復帰記念日", "category": "local_okinawa", "origin": "沖縄県", "priority": 92},
+    {"month": 6, "day": 6, "name": "オクラの日（宮古島）", "category": "agriculture", "origin": "宮古島", "priority": 82},
+    {"month": 7, "day": 1, "name": "県産品奨励月間開始", "category": "ja_agri", "origin": "沖縄県", "priority": 91},
+    {"month": 7, "day": 5, "name": "名護の日", "category": "local_yambaru", "origin": "名護市", "priority": 90},
+    {"month": 7, "day": 7, "name": "うるま市オクラの日", "category": "agriculture", "origin": "うるま市", "priority": 82},
     {"month": 7, "day": 15, "name": "マンゴーの日", "category": "agriculture", "origin": "沖縄県", "priority": 88},
+    {"month": 8, "day": 1, "name": "パインの日", "category": "agriculture", "origin": "沖縄県", "priority": 90},
+    {"month": 8, "day": 5, "name": "裏ゴーヤーの日", "category": "agriculture", "origin": "沖縄県", "priority": 86},
     {"month": 8, "day": 8, "name": "たこ焼の日", "category": "takoyaki", "origin": "日本記念日協会", "priority": 100},
+    {"month": 8, "day": 8, "name": "パパイヤの日", "category": "agriculture", "origin": "沖縄県", "priority": 87},
+    {"month": 8, "day": 9, "name": "エッグの日", "category": "agriculture", "origin": "沖縄県", "priority": 85},
+    {"month": 8, "day": 10, "name": "パインの日（名護パイン園）", "category": "local_yambaru", "origin": "名護市", "priority": 84},
+    {"month": 8, "day": 17, "name": "パイナップルの日", "category": "agriculture", "origin": "日本", "priority": 80},
+    {"month": 9, "day": 3, "name": "琉球もろみ酢の日", "category": "agriculture", "origin": "沖縄県", "priority": 82},
+    {"month": 9, "day": 4, "name": "古酒の日", "category": "local_okinawa", "origin": "沖縄県", "priority": 82},
+    {"month": 9, "day": 15, "name": "やんばる国立公園指定日", "category": "local_yambaru", "origin": "やんばる", "priority": 89},
     {"month": 9, "day": 22, "name": "シークヮーサーの日", "category": "agriculture", "origin": "沖縄県", "priority": 93},
+    {"month": 10, "day": 10, "name": "那覇大綱引き", "category": "local_okinawa", "origin": "那覇市", "priority": 84},
     {"month": 10, "day": 16, "name": "国消国産の日", "category": "ja_agri", "origin": "JA全中", "priority": 96},
     {"month": 10, "day": 17, "name": "沖縄そばの日", "category": "local_okinawa", "origin": "沖縄県", "priority": 84},
+    {"month": 11, "day": 1, "name": "泡盛の日", "category": "local_okinawa", "origin": "沖縄県酒造組合連合会", "priority": 86},
+    {"month": 11, "day": 16, "name": "いもの日", "category": "agriculture", "origin": "沖縄県", "priority": 83},
+    {"month": 11, "day": 29, "name": "うちな〜いい肉の日", "category": "agriculture", "origin": "沖縄県", "priority": 86},
+    {"month": 12, "day": 1, "name": "沖縄産コーヒーの日", "category": "agriculture", "origin": "沖縄県", "priority": 83},
+    {"month": 12, "day": 12, "name": "島にんじんの日", "category": "agriculture", "origin": "沖縄県", "priority": 88},
+    {"month": 12, "day": 23, "name": "海ぶどうの日", "category": "agriculture", "origin": "沖縄県", "priority": 83},
 ]
 
 # Fallback national observances used only when no Okinawa/fixed/recurring events are available.
 NATIONAL_DAY_FALLBACKS = {
     (5, 19): {"name": "ボクシングの日", "origin": "日本プロボクシング協会"},
 }
+
+
+async def fetch_national_anniversaries(dt: datetime) -> list[str]:
+    mmdd = f"{dt.month:02d}{dt.day:02d}"
+    url = f"https://api.whatistoday.cyou/v3/anniv/{mmdd}"
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            res = await client.get(url)
+            res.raise_for_status()
+            payload = res.json()
+        names: list[str] = []
+        for i in range(1, 6):
+            key = f"anniv{i}"
+            value = str(payload.get(key, "")).strip()
+            if value:
+                names.append(value)
+        return names
+    except Exception:
+        return []
 
 SEASONAL_PRODUCE_BY_MONTH = {
     1: [
@@ -231,7 +283,7 @@ def is_nth_weekday(dt: datetime, weekday: int, nth: int) -> bool:
     return ((dt.day - 1) // 7) + 1 == nth
 
 
-def build_daily_events(dt: datetime, okinawa_event: str) -> list[EventItem]:
+async def build_daily_events(dt: datetime, okinawa_event: str) -> list[EventItem]:
     events: list[EventItem] = []
 
     if okinawa_event != "該当する沖縄行事はありません。":
@@ -283,6 +335,18 @@ def build_daily_events(dt: datetime, okinawa_event: str) -> list[EventItem]:
                     category="national_memorial_day",
                     origin=fallback["origin"],
                     priority_score=60,
+                )
+            )
+    # If Okinawa event is not available, supplement with national fixed-date anniversary API.
+    if okinawa_event == "該当する沖縄行事はありません。":
+        anniversaries = await fetch_national_anniversaries(dt)
+        for name in anniversaries[:2]:
+            events.append(
+                EventItem(
+                    name=name,
+                    category="national_memorial_day_api",
+                    origin="whatistoday.cyou",
+                    priority_score=58,
                 )
             )
 
@@ -429,7 +493,7 @@ async def get_today_info() -> TodayInfo:
 
     old_calendar, sekki24 = format_old_calendar_info(now)
     okinawa_event = pick_okinawa_event(now)
-    events = build_daily_events(now, okinawa_event)
+    events = await build_daily_events(now, okinawa_event)
     seasonal_produce = build_seasonal_produce(now)
     post_strategy = build_post_strategy(
         events=events,
