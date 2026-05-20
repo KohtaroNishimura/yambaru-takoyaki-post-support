@@ -209,9 +209,9 @@ NATIONAL_DAY_FALLBACKS = {
 
 async def fetch_national_anniversaries(dt: datetime) -> list[str]:
     mmdd = f"{dt.month:02d}{dt.day:02d}"
-    url = f"https://api.whatistoday.cyou/v3/anniv/{mmdd}"
+    url = f"https://api.whatistoday.cyou/index.cgi/v3/anniv/{mmdd}"
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
+        async with httpx.AsyncClient(timeout=8.0, follow_redirects=True) as client:
             res = await client.get(url)
             res.raise_for_status()
             payload = res.json()
